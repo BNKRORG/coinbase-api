@@ -4,6 +4,7 @@
 
 mod agent;
 pub mod auth;
+pub mod builder;
 pub mod client;
 mod constant;
 pub mod error;

@@ -6,6 +6,7 @@ use super::agent::SecureHttpClientAgent;
 use super::auth::CoinbaseAuth;
 use super::error::Error;
 use super::response::{Account, CoinbaseResponse, Transaction};
+use crate::app::builder::CoinbaseAppClientBuilder;
 
 /// Coinbase App client
 #[derive(Debug, Clone)]
@@ -15,9 +16,20 @@ pub struct CoinbaseAppClient {
 
 impl CoinbaseAppClient {
     /// Construct a new Coinbase App client.
-    pub fn new(auth: CoinbaseAuth, use_sandbox: bool) -> Result<Self, Error> {
+    pub fn new(auth: CoinbaseAuth) -> Result<Self, Error> {
+        Self::builder().auth(auth).build()
+    }
+
+    /// Get a new builder
+    #[inline]
+    pub fn builder() -> CoinbaseAppClientBuilder {
+        CoinbaseAppClientBuilder::default()
+    }
+
+    #[inline]
+    pub(super) fn from_builder(builder: CoinbaseAppClientBuilder) -> Result<Self, Error> {
         Ok(Self {
-            client: SecureHttpClientAgent::new(auth, use_sandbox)?,
+            client: SecureHttpClientAgent::new(builder.auth, builder.sandbox, builder.timeout)?,
         })
     }
 

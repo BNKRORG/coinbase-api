@@ -18,16 +18,14 @@ struct HttpClientAgent {
 }
 
 impl HttpClientAgent {
-    fn new(use_sandbox: bool) -> Result<Self, Error> {
-        let root_url: &str = if use_sandbox {
+    fn new(sandbox: bool, timeout: Duration) -> Result<Self, Error> {
+        let root_url: &str = if sandbox {
             API_SANDBOX_URL
         } else {
             API_ROOT_URL
         };
 
-        let client = Client::builder()
-            .timeout(Duration::from_secs(15)) // TODO: make configurable
-            .build()?;
+        let client = Client::builder().timeout(timeout).build()?;
 
         Ok(Self {
             root_url: Url::parse(root_url)?,
@@ -96,7 +94,7 @@ pub struct SecureHttpClientAgent {
 }
 
 impl SecureHttpClientAgent {
-    pub(super) fn new(auth: CoinbaseAuth, use_sandbox: bool) -> Result<Self, Error> {
+    pub(super) fn new(auth: CoinbaseAuth, sandbox: bool, timeout: Duration) -> Result<Self, Error> {
         let jwt: Option<Jwt> = match auth {
             CoinbaseAuth::None => None,
             CoinbaseAuth::ApiKeys {
@@ -104,7 +102,7 @@ impl SecureHttpClientAgent {
                 secret_key,
             } => {
                 // Do not generate JWT in sandbox mode.
-                if use_sandbox {
+                if sandbox {
                     None
                 } else {
                     Some(Jwt::new(api_key, secret_key)?)
@@ -114,7 +112,7 @@ impl SecureHttpClientAgent {
 
         Ok(Self {
             jwt,
-            base: HttpClientAgent::new(use_sandbox)?,
+            base: HttpClientAgent::new(sandbox, timeout)?,
         })
     }
 

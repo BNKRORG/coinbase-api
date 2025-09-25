@@ -7,7 +7,7 @@ async fn main() {
         api_key: String::from("<api-key>"),
         secret_key: String::from("<secret-key>"),
     };
-    let client = CoinbaseAppClient::new(auth, false).unwrap();
+    let client = CoinbaseAppClient::new(auth).unwrap();
 
     let accounts = client.accounts().await.unwrap();
 

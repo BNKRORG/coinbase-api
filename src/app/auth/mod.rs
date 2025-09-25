@@ -7,9 +7,10 @@ use std::fmt;
 pub(super) mod jwt;
 
 /// Coinbase authentication
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub enum CoinbaseAuth {
     /// No authentication
+    #[default]
     None,
     /// API Keys
     ApiKeys {
