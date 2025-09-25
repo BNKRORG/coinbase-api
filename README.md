@@ -1,15 +1,20 @@
 # Coinbase API
 
-## Description
+## Installation
 
-Async Coinbase APIs for getting balances and transactions.
-
-## Usage
+Add the dependency to your `Cargo.toml`:
 
 ```toml
 [dependencies]
 coinbase-api = { git = "https://github.com/BNKRORG/coinbase-api", tag = "<version>" }
 ```
+
+## Supported APIs
+
+| API          | Supported |
+|--------------|-----------|
+| Coinbase App | ❌         |
+| Coinbase Pro | ❌         |
 
 ## Minimum Supported Rust Version (MSRV)
 
