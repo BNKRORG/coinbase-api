@@ -2,6 +2,9 @@
 pub(super) const API_ROOT_URL: &str = "https://api.coinbase.com";
 pub(super) const API_SANDBOX_URL: &str = "https://api-sandbox.coinbase.com";
 
+/// User Agent for the client
+pub(super) const USER_AGENT_NAME: &str = concat!("coinbase-api/", env!("CARGO_PKG_VERSION"));
+
 /// Coinbase App Versioning
 ///
 /// <https://docs.cdp.coinbase.com/coinbase-app/api-architecture/versioning>

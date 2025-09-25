@@ -2,6 +2,7 @@
 //!
 //! <https://docs.cdp.coinbase.com/coinbase-app/introduction/welcome>
 
+mod agent;
 pub mod auth;
 pub mod client;
 mod constant;

@@ -9,9 +9,11 @@ use base64::Engine;
 use base64::engine::general_purpose::{STANDARD_NO_PAD, URL_SAFE_NO_PAD};
 use openssl::ec::EcKey;
 use openssl::pkey::PKey;
+use reqwest::Method;
 use ring::rand::{SecureRandom, SystemRandom};
 use ring::signature::{ECDSA_P256_SHA256_FIXED_SIGNING, EcdsaKeyPair, Signature};
 use serde::Serialize;
+use url::Url;
 
 use crate::app::error::Error;
 use crate::util::time;
@@ -20,6 +22,7 @@ const JWT_ALGORITHM: &str = "ES256";
 const JWT_ISSUER: &str = "cdp";
 
 /// Coinbase App API authentication via JWT
+#[derive(Debug, Clone)]
 pub struct Jwt {
     /// API Key provided by the service.
     api_key: String,
@@ -50,6 +53,11 @@ impl Jwt {
             signing_key: Arc::new(signing_key),
             rng,
         })
+    }
+
+    #[inline]
+    pub(crate) fn build_uri(method: &Method, url: &Url) -> String {
+        format!("{method} {url}")
     }
 
     /// Creates the header for the message.
