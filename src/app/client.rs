@@ -1,8 +1,11 @@
 //! Coinbase App client
 
+use reqwest::Response;
+
 use super::agent::SecureHttpClientAgent;
 use super::auth::CoinbaseAuth;
 use super::error::Error;
+use super::response::{Account, CoinbaseResponse};
 
 /// Coinbase App client
 #[derive(Debug, Clone)]
@@ -16,5 +19,39 @@ impl CoinbaseAppClient {
         Ok(Self {
             client: SecureHttpClientAgent::new(auth, use_sandbox)?,
         })
+    }
+
+    /// Get accounts
+    ///
+    /// <https://docs.cdp.coinbase.com/coinbase-app/track-apis/accounts#list-accounts>
+    pub async fn accounts(&self) -> Result<Vec<Account>, Error> {
+        let mut accounts = Vec::new();
+
+        let mut next_uri: Option<String> = None;
+
+        loop {
+            let uri: &str = match &next_uri {
+                Some(next_uri) => next_uri.as_str(),
+                None => "/v2/accounts",
+            };
+
+            let res: Response = self.client.get(uri, Some("limit=100")).await?;
+
+            let res: CoinbaseResponse<Vec<Account>> = res.json().await?;
+
+            accounts.extend(res.data);
+
+            // Check if there is another page
+            if let Some(pagination) = res.pagination {
+                if let Some(next) = pagination.next_uri {
+                    next_uri = Some(next);
+                    continue;
+                }
+            }
+
+            break;
+        }
+
+        Ok(accounts)
     }
 }

@@ -8,7 +8,6 @@ use super::auth::CoinbaseAuth;
 use super::auth::jwt::Jwt;
 use super::constant::{API_ROOT_URL, API_SANDBOX_URL, CB_VERSION, USER_AGENT_NAME};
 use super::error::Error;
-use super::response::CoinbaseErrorMessage;
 
 #[derive(Debug, Clone)]
 struct HttpClientAgent {
@@ -45,12 +44,14 @@ impl HttpClientAgent {
 
     /// Handles the response from the API.
     async fn handle_response(&self, response: Response) -> Result<Response, Error> {
-        if response.status().is_success() {
-            Ok(response)
-        } else {
-            let res: CoinbaseErrorMessage = response.json().await?;
-            Err(Error::Coinbase(res))
-        }
+        Ok(response.error_for_status()?)
+
+        // if response.status().is_success() {
+        //             Ok(response)
+        //         } else {
+        //             let res: CoinbaseErrorMessage = response.json().await?;
+        //             Err(Error::Coinbase(res))
+        //         }
     }
 
     pub(crate) async fn execute_request(
@@ -120,18 +121,18 @@ impl SecureHttpClientAgent {
     /// Builds a token for the request.
     ///
     /// If JWT is not enabled, returns `None`.
-    fn build_token(&self, method: &Method, resource: &str) -> Result<Option<String>, Error> {
+    fn build_token(&self, method: &Method, path: &str) -> Result<Option<String>, Error> {
         match &self.jwt {
             Some(jwt) => {
-                let url: Url = self.base.root_url.join(resource)?;
-                let uri: String = Jwt::build_uri(method, &url);
+                let url: Url = self.base.root_url.join(path)?;
+                let uri: String = Jwt::build_uri(method, &url)?;
                 Ok(Some(jwt.encode(Some(uri))?))
             }
             None => Ok(None),
         }
     }
 
-    async fn get(&mut self, resource: &str, query: Option<&str>) -> Result<Response, Error> {
+    pub(super) async fn get(&self, resource: &str, query: Option<&str>) -> Result<Response, Error> {
         const METHOD: Method = Method::GET;
 
         // Build URL
