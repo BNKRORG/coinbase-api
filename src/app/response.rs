@@ -53,29 +53,25 @@ pub(super) struct Pagination {
 /// Account
 #[derive(Debug, Deserialize)]
 pub struct Account {
-    // id appears to be either a UUID or a token name e.g: "LINK"
+    // NOTE: the ID appears to be either a UUID or a token name e.g: "BTC"
     /// Account ID
     pub id: String,
-    /// Account type
+    /// User or system defined name
+    pub name: String,
+    /// Primary account (or not)
+    pub primary: bool,
+    /// Account’s type.
+    ///
+    /// Valid values: `wallet`, `fiat`, `vault`
     pub r#type: String,
+    /// Account’s currency
+    pub currency: Currency,
+    /// Account balance
+    pub balance: Balance,
     /// Created at
     pub created_at: Option<String>,
     /// Updated at
     pub updated_at: Option<String>,
-    /// Resource
-    pub resource: String,
-    /// Resource path
-    pub resource_path: String,
-    /// Account name
-    pub name: String,
-    /// Primary account
-    pub primary: bool,
-    /// Account balance
-    pub balance: Balance,
-    /// Allows deposits
-    pub allow_deposits: bool,
-    /// Allow withdrawals
-    pub allow_withdrawals: bool,
 }
 
 /// Account balance
@@ -85,4 +81,15 @@ pub struct Balance {
     pub amount: BigDecimal,
     /// Currency
     pub currency: String,
+}
+
+/// Currency
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
+pub struct Currency {
+    /// Asset ID
+    pub asset_id: String,
+    /// Currency code (i.e., BTC)
+    pub code: String,
+    /// Currency name (i.e., Bitcoin)
+    pub name: String,
 }
