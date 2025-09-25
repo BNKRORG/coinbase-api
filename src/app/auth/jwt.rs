@@ -56,8 +56,11 @@ impl Jwt {
     }
 
     #[inline]
-    pub(crate) fn build_uri(method: &Method, url: &Url) -> String {
-        format!("{method} {url}")
+    pub(crate) fn build_uri(method: &Method, url: &Url) -> Result<String, Error> {
+        let host: &str = url.host_str().ok_or(Error::HostNotFound)?;
+        let path: &str = url.path();
+
+        Ok(format!("{method} {host}{path}"))
     }
 
     /// Creates the header for the message.

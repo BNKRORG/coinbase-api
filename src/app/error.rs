@@ -25,4 +25,7 @@ pub enum Error {
     /// Bad signature
     #[error("bad signature: {0}")]
     BadSignature(String),
+    /// Host not found
+    #[error("host not found")]
+    HostNotFound,
 }
