@@ -7,7 +7,6 @@ publish = false
 
 [dependencies]
 base64 = "0.22"
-bigdecimal = { version = "0.4", features = ["serde"] }
 openssl = "0.10"
 reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
 ring = "0.17"
