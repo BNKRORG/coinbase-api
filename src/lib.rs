@@ -6,3 +6,4 @@
 #![warn(rustdoc::bare_urls)]
 
 pub mod app;
+mod util;
