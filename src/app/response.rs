@@ -75,7 +75,7 @@ pub struct Account {
 }
 
 /// Account balance
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
 pub struct Balance {
     /// Amount
     pub amount: BigDecimal,
@@ -92,4 +92,146 @@ pub struct Currency {
     pub code: String,
     /// Currency name (i.e., Bitcoin)
     pub name: String,
+}
+
+/// Transaction type
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
+pub enum TransactionType {
+    /// Fills for an advanced trade order
+    #[serde(rename = "advanced_trade_fill")]
+    AdvancedTradeFill,
+    /// Buy a digital asset
+    #[serde(rename = "buy")]
+    Buy,
+    /// Recover money already disbursed
+    #[serde(rename = "clawback")]
+    Clawback,
+    /// Daily cash transfers between futures and spot accounts for the US-regulated futures product
+    #[serde(rename = "derivatives_settlement")]
+    DerivativesSettlement,
+    /// Payout for user earn on Coinbase
+    #[serde(rename = "earn_payout")]
+    EarnPayout,
+    /// Deposit funds into a fiat account from a financial institution
+    #[serde(rename = "fiat_deposit")]
+    FiatDeposit,
+    /// Withdraw funds from a fiat account
+    #[serde(rename = "fiat_withdrawal")]
+    FiatWithdrawal,
+    /// Redemptions for Incentive & Referral campaigns
+    #[serde(rename = "incentives_rewards_payout")]
+    IncentivesRewardsPayout,
+    /// Clawback incentive payout from customer account
+    #[serde(rename = "incentives_shared_clawback")]
+    IncentivesSharedClawback,
+    /// Deposit crypto to customer international account
+    #[serde(rename = "intx_deposit")]
+    IntxDeposit,
+    /// Withdraw crypto from customer international account
+    #[serde(rename = "intx_withdrawal")]
+    IntxWithdrawal,
+    /// Receive a digital asset
+    #[serde(rename = "receive")]
+    Receive,
+    /// Request a digital asset from a user or email
+    #[serde(rename = "request")]
+    Request,
+    /// Sweep of dust balance from the account
+    #[serde(rename = "retail_simple_dust")]
+    RetailSimpleDust,
+    /// Sell a digital asset
+    #[serde(rename = "sell")]
+    Sell,
+    /// Send a supported digital asset to a corresponding address or email.
+    #[serde(rename = "send")]
+    Send,
+    /// Funds from primary account moved to staked account
+    #[serde(rename = "staking_transfer")]
+    StakingTransfer,
+    /// Transaction for Coinbase subscription rebate
+    #[serde(rename = "subscription_rebate")]
+    SubscriptionRebate,
+    /// Transaction for Coinbase subscription
+    #[serde(rename = "subscription")]
+    Subscription,
+    /// Exchange one cryptocurrency for another cryptocurrency or fiat currency
+    #[serde(rename = "trade")]
+    Trade,
+    /// Transfer funds between two of your own accounts
+    #[serde(rename = "transfer")]
+    Transfer,
+    /// Default transaction type, uncategorized.
+    #[default]
+    #[serde(rename = "tx")]
+    Tx,
+    /// Funds from staked funds moved to primary account
+    #[serde(rename = "unstaking_transfer")]
+    UnstakingTransfer,
+    /// Recover unsupported ERC-20s deposited to Coinbase on ethereum mainnet
+    #[serde(rename = "unsupported_asset_recovery")]
+    UnsupportedAssetRecovery,
+    /// Unwrap wrapped assets, e.g. cbETH, to wrappable assets, e.g. staked ETH
+    #[serde(rename = "unwrap_asset")]
+    UnwrapAsset,
+    /// Withdraw funds from a vault account
+    #[serde(rename = "vault_withdrawal")]
+    VaultWithdrawal,
+    /// Wrap wrappable assets, e.g. staked ETH, to wrapped assets, e.g. cbETH
+    #[serde(rename = "wrap_asset")]
+    WrapAsset,
+    /// Conversion of USDC to USD to support the anticipated margin requirement for a futures trade
+    #[serde(rename = "fcm_futures_usdc_sell")]
+    FcmFuturesUsdcSell,
+    /// Conversion of USDC to USD to support additional margin requirements or cover losses for open futures positions
+    #[serde(rename = "fcm_futures_usdc_sell_additional_encumberment_rollup")]
+    FcmFuturesUsdcSellAdditionalEncumbermentRollup,
+}
+
+/// Transaction status
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
+pub enum TransactionStatus {
+    /// Transaction was canceled
+    #[serde(rename = "canceled")]
+    Canceled,
+    /// Completed transactions (e.g., a send or a buy)
+    #[serde(rename = "completed")]
+    Completed,
+    /// Conditional transaction expired due to external factors
+    #[serde(rename = "expired")]
+    Expired,
+    /// Failed transactions (e.g., failed buy)
+    #[serde(rename = "failed")]
+    Failed,
+    /// Pending transactions (e.g., a send or a buy)
+    #[serde(rename = "pending")]
+    Pending,
+    /// Vault withdrawal is waiting to be cleared
+    #[serde(rename = "waiting_for_clearing")]
+    WaitingForClearing,
+    /// Vault withdrawal is waiting for approval
+    #[serde(rename = "waiting_for_signature")]
+    WaitingForSignature,
+}
+
+/// Transaction
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
+pub struct Transaction {
+    /// Transaction ID
+    pub id: String,
+    /// Transaction type
+    pub r#type: TransactionType,
+    /// Transaction status
+    pub status: TransactionStatus,
+    ///Amount of any supported digital asset.
+    ///
+    /// Value is negative to indicate the debiting of funds.
+    pub amount: Balance,
+    /// Amount in user’s native currency.
+    ///
+    /// Value is negative to indicate the debiting of funds.
+    pub native_amount: Balance,
+    /// User defined description
+    pub description: Option<String>,
+    /// Created at
+    pub created_at: Option<String>,
 }
