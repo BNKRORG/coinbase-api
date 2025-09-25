@@ -54,4 +54,14 @@ impl CoinbaseAppClient {
 
         Ok(accounts)
     }
+
+    /// Get account by ID
+    ///
+    /// <https://docs.cdp.coinbase.com/coinbase-app/track-apis/accounts#show-account>
+    pub async fn account(&self, id: &str) -> Result<Account, Error> {
+        let endpoint: String = format!("/v2/accounts/{id}");
+        let res: Response = self.client.get(&endpoint, None).await?;
+        let res: CoinbaseResponse<Account> = res.json().await?;
+        Ok(res.data)
+    }
 }
