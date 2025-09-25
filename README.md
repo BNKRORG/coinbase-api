@@ -13,7 +13,7 @@ coinbase-api = { git = "https://github.com/BNKRORG/coinbase-api", tag = "<versio
 
 | API          | Supported |
 |--------------|-----------|
-| Coinbase App | ❌         |
+| Coinbase App | ✅         |
 | Coinbase Pro | ❌         |
 
 ## Minimum Supported Rust Version (MSRV)
