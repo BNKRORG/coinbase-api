@@ -243,3 +243,65 @@ where
     let s: String = String::deserialize(deserializer)?;
     s.parse().map_err(serde::de::Error::custom)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_deserialize_account() {
+        let json = r##"
+        {
+          "data": {
+            "id": "2bbf394c-193b-5b2a-9155-3b4732659ede",
+            "name": "My Wallet",
+            "primary": true,
+            "type": "wallet",
+            "currency": {
+              "address_regex": "^([13][a-km-zA-HJ-NP-Z1-9]{25,34})|^(bc1[qzry9x8gf2tvdw0s3jn54khce6mua7l]([qpzry9x8gf2tvdw0s3jn54khce6mua7l]{38}|[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{58}))$",
+              "asset_id": "5b71fc48-3dd3-540c-809b-f8c94d0e68b5",
+              "code": "BTC",
+              "color": "#F7931A",
+              "exponent": 8,
+              "name": "Bitcoin",
+              "slug": "bitcoin",
+              "sort_index": 100,
+              "type": "crypto"
+            },
+            "balance": {
+              "amount": "39.59000000",
+              "currency": "BTC"
+            },
+            "created_at": "2024-01-31T20:49:02Z",
+            "updated_at": "2024-01-31T20:49:02Z",
+            "resource": "account",
+            "resource_path": "/v2/accounts/2bbf394c-193b-5b2a-9155-3b4732659ede"
+          }
+        }"##;
+
+        let response: CoinbaseResponse<Account> = serde_json::from_str(json).unwrap();
+        let account = response.data;
+
+        // Verify account fields
+        assert_eq!(account.id, "2bbf394c-193b-5b2a-9155-3b4732659ede");
+        assert_eq!(account.name, "My Wallet");
+        assert_eq!(account.primary, true);
+        assert_eq!(account.r#type, "wallet");
+
+        // Verify currency fields
+        assert_eq!(
+            account.currency.asset_id,
+            "5b71fc48-3dd3-540c-809b-f8c94d0e68b5"
+        );
+        assert_eq!(account.currency.code, "BTC");
+        assert_eq!(account.currency.name, "Bitcoin");
+
+        // Verify balance fields - this is the key test for string-to-f64 deserialization
+        assert_eq!(account.balance.amount, 39.59);
+        assert_eq!(account.balance.currency, "BTC");
+
+        // Verify optional fields
+        assert_eq!(account.created_at, Some("2024-01-31T20:49:02Z".to_string()));
+        assert_eq!(account.updated_at, Some("2024-01-31T20:49:02Z".to_string()));
+    }
+}
