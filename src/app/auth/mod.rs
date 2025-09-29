@@ -4,6 +4,9 @@
 
 use std::fmt;
 
+use oauth2::{ClientId, ClientSecret};
+use url::Url;
+
 pub(super) mod jwt;
 
 /// Coinbase authentication
@@ -19,6 +22,21 @@ pub enum CoinbaseAuth {
         /// Secret Key
         secret_key: String,
     },
+    /// OAuth2
+    OAuth {
+        /// Client ID
+        client_id: ClientId,
+        /// Client secret
+        client_secret: ClientSecret,
+        /// Redirect URL
+        redirect_url: Url,
+        /// Access token
+        access_token: Option<String>,
+        /// Refresh token
+        refresh_token: Option<String>,
+        /// Expiration time
+        expires_at: Option<u64>,
+    }
 }
 
 impl fmt::Debug for CoinbaseAuth {
