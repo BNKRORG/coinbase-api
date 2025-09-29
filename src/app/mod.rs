@@ -8,4 +8,5 @@ pub mod builder;
 pub mod client;
 mod constant;
 pub mod error;
+pub mod oauth;
 pub mod response;

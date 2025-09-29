@@ -29,7 +29,12 @@ impl CoinbaseAppClient {
     #[inline]
     pub(super) fn from_builder(builder: CoinbaseAppClientBuilder) -> Result<Self, Error> {
         Ok(Self {
-            client: SecureHttpClientAgent::new(builder.auth, builder.sandbox, builder.timeout)?,
+            client: SecureHttpClientAgent::new(
+                builder.auth,
+                builder.sandbox,
+                builder.timeout,
+                builder.oauth_callback,
+            )?,
         })
     }
 
