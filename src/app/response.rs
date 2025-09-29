@@ -4,6 +4,7 @@
 
 use std::fmt;
 
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 /// Coinbase App error message
@@ -68,9 +69,9 @@ pub struct Account {
     /// Account balance
     pub balance: Balance,
     /// Created at
-    pub created_at: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
     /// Updated at
-    pub updated_at: Option<String>,
+    pub updated_at: Option<DateTime<Utc>>,
 }
 
 /// Account balance
@@ -233,7 +234,7 @@ pub struct Transaction {
     /// User defined description
     pub description: Option<String>,
     /// Created at
-    pub created_at: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
 }
 
 fn deserialize_string_to_f64<'de, D>(deserializer: D) -> Result<f64, D::Error>
@@ -301,7 +302,7 @@ mod tests {
         assert_eq!(account.balance.currency, "BTC");
 
         // Verify optional fields
-        assert_eq!(account.created_at, Some("2024-01-31T20:49:02Z".to_string()));
-        assert_eq!(account.updated_at, Some("2024-01-31T20:49:02Z".to_string()));
+        assert_eq!(account.created_at.map(|t| t.timestamp()), Some(1706734142));
+        assert_eq!(account.updated_at.map(|t| t.timestamp()), Some(1706734142));
     }
 }
