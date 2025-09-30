@@ -8,7 +8,7 @@ publish = false
 [dependencies]
 base64 = "0.22"
 chrono = { version = "0.4", features = ["serde"] }
-openssl = "0.10"
+p256 = { version = "0.13", features = ["pem", "pkcs8"] }
 reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
 ring = "0.17"
 serde = { version = "1.0", features = ["derive"] }

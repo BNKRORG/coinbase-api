@@ -7,8 +7,8 @@ use std::sync::Arc;
 
 use base64::Engine;
 use base64::engine::general_purpose::{STANDARD_NO_PAD, URL_SAFE_NO_PAD};
-use openssl::ec::EcKey;
-use openssl::pkey::PKey;
+use p256::SecretKey;
+use p256::pkcs8::{self, DecodePrivateKey, EncodePrivateKey};
 use reqwest::Method;
 use ring::rand::{SecureRandom, SystemRandom};
 use ring::signature::{ECDSA_P256_SHA256_FIXED_SIGNING, EcdsaKeyPair, Signature};
@@ -36,7 +36,7 @@ impl Jwt {
     pub(crate) fn new<T1, T2>(api_key: T1, api_secret: T2) -> Result<Self, Error>
     where
         T1: Into<String>,
-        T2: AsRef<[u8]>,
+        T2: AsRef<str>,
     {
         // Format the secret key
         let secret: Vec<u8> = format_key(api_secret.as_ref())?;
@@ -171,36 +171,28 @@ impl Payload<'_> {
 /// This function takes a private key in PEM format, attempts to format it into PKCS#8 format,
 /// and then parses it. If the key is already in PKCS#8 format, it parses the key directly.
 /// The function supports both PKCS#1 and PKCS#8 PEM-encoded EC keys.
-///
-/// # Arguments
-///
-/// * `key`: A byte slice (`&[u8]`) containing the private key in PEM format.
-///
-/// # Returns
-///
-/// A `Result<Vec<u8>>` with the parsed key data in binary format if successful;
-/// otherwise, an error.
-fn format_key(key: &[u8]) -> Result<Vec<u8>, Error> {
+fn format_key(key: &str) -> Result<Vec<u8>, Error> {
     // Check if already in pkcs8 format.
-    if let Ok(pkey) = PKey::private_key_from_pem(key) {
-        if let Ok(serialized) = pkey.private_key_to_pem_pkcs8() {
-            if serialized == key {
-                return parse_key(key);
-            }
+    if let Ok(secret_key) = SecretKey::from_pkcs8_pem(key) {
+        // Already in PKCS#8 format, verify it's correct
+        let pkcs8_pem = secret_key
+            .to_pkcs8_pem(pkcs8::LineEnding::LF)
+            .map_err(|e| Error::InvalidPrivateKey(e.to_string()))?;
+
+        if pkcs8_pem.as_str() == key {
+            return parse_key(key);
         }
     }
 
-    // Not in pkcs8 format, attempt conversion.
-    let ec_key = EcKey::private_key_from_pem(key)
-        .map_err(|why| Error::InvalidPrivateKey(why.to_string()))?;
-    let pkey =
-        PKey::from_ec_key(ec_key).map_err(|why| Error::InvalidPrivateKey(why.to_string()))?;
+    // Try to parse as EC private key and convert to PKCS#8
+    let secret_key = SecretKey::from_sec1_pem(key)
+        .map_err(|e| Error::InvalidPrivateKey(format!("Failed to parse EC key: {}", e)))?;
 
-    let new_key = pkey
-        .private_key_to_pem_pkcs8()
-        .map_err(|why| Error::InvalidPrivateKey(why.to_string()))?;
+    let pkcs8_pem = secret_key
+        .to_pkcs8_pem(pkcs8::LineEnding::LF)
+        .map_err(|e| Error::InvalidPrivateKey(format!("Failed to convert to PKCS#8: {}", e)))?;
 
-    parse_key(&new_key)
+    parse_key(pkcs8_pem.as_str())
 }
 
 /// Parses a PEM-encoded private key or a base64-encoded key.
@@ -217,29 +209,27 @@ fn format_key(key: &[u8]) -> Result<Vec<u8>, Error> {
 ///
 /// A `Result<Vec<u8>>` which is Ok containing the decoded binary key data if successful,
 /// or an Err with a `Error::InvalidPrivateKey()` containing the error message if any error occurs.
-fn parse_key(api_secret: &[u8]) -> Result<Vec<u8>, Error> {
-    let pem_str =
-        str::from_utf8(api_secret).map_err(|why| Error::InvalidPrivateKey(why.to_string()))?;
-
+fn parse_key(api_secret: &str) -> Result<Vec<u8>, Error> {
     // Checks for the headers and footers to remove them.
-    let base64_encoded = if pem_str.starts_with("-----BEGIN") && pem_str.contains("-----END") {
-        let start = pem_str
+    let base64_encoded = if api_secret.starts_with("-----BEGIN") && api_secret.contains("-----END")
+    {
+        let start = api_secret
             .find("-----BEGIN")
-            .and_then(|s| pem_str[s..].find('\n'))
+            .and_then(|s| api_secret[s..].find('\n'))
             .ok_or_else(|| Error::InvalidPrivateKey("No BEGIN delimiter".to_string()))?
             + 1;
 
-        let end = pem_str
+        let end = api_secret
             .find("-----END")
             .ok_or_else(|| Error::InvalidPrivateKey("No END delimiter".to_string()))?;
 
         // Get the data between the header and footer.
-        pem_str[start..end]
+        api_secret[start..end]
             .lines()
             .collect::<String>()
             .replace(['\n', '\r'], "")
     } else {
-        pem_str.replace(['\n', '\r'], "")
+        api_secret.replace(['\n', '\r'], "")
     };
 
     // Decode the key.
