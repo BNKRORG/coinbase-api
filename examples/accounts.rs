@@ -1,5 +1,4 @@
-use coinbase_api::app::auth::CoinbaseAuth;
-use coinbase_api::app::client::CoinbaseAppClient;
+use coinbase_api::prelude::*;
 
 #[tokio::main]
 async fn main() {
