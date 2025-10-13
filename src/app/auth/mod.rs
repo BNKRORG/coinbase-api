@@ -4,7 +4,12 @@
 
 use std::fmt;
 
+use oauth2::{ClientId, ClientSecret};
+use url::Url;
+
 pub(super) mod jwt;
+
+use crate::app::oauth::CoinbaseOAuth2Token;
 
 /// Coinbase authentication
 #[derive(Clone, Default)]
@@ -18,6 +23,17 @@ pub enum CoinbaseAuth {
         api_key: String,
         /// Secret Key
         secret_key: String,
+    },
+    /// OAuth2
+    OAuth {
+        /// Client ID
+        client_id: ClientId,
+        /// Client secret
+        client_secret: ClientSecret,
+        /// Redirect URL
+        redirect_url: Url,
+        /// Token
+        token: Option<CoinbaseOAuth2Token>,
     },
 }
 

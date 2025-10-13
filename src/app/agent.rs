@@ -1,13 +1,44 @@
+use std::sync::Arc;
 use std::time::Duration;
 
+use oauth2::basic::{
+    BasicClient, BasicErrorResponse, BasicRevocationErrorResponse, BasicTokenIntrospectionResponse,
+    BasicTokenResponse,
+};
+use oauth2::{AuthUrl, EndpointNotSet, EndpointSet, RedirectUrl, StandardRevocableToken, TokenUrl};
 use reqwest::header::{CONTENT_TYPE, HeaderValue, USER_AGENT};
 use reqwest::{Client, Method, Response};
 use url::Url;
 
 use super::auth::CoinbaseAuth;
 use super::auth::jwt::Jwt;
-use super::constant::{API_ROOT_URL, API_SANDBOX_URL, CB_VERSION, USER_AGENT_NAME};
+use super::constant::{
+    API_ROOT_URL, API_SANDBOX_URL, CB_VERSION, OAUTH_ACCESS_TOKEN_URL, OAUTH_AUTHORIZE_URL,
+    USER_AGENT_NAME,
+};
 use super::error::Error;
+use super::oauth::{CoinbaseAppOAuth2Callback, CoinbaseOAuth2Token};
+
+#[derive(Debug, Clone)]
+enum Authenticator {
+    None,
+    Jwt(Jwt),
+    OAuth2 {
+        client: oauth2::Client<
+            BasicErrorResponse,
+            BasicTokenResponse,
+            BasicTokenIntrospectionResponse,
+            StandardRevocableToken,
+            BasicRevocationErrorResponse,
+            EndpointSet,
+            EndpointNotSet,
+            EndpointNotSet,
+            EndpointNotSet,
+            EndpointSet,
+        >,
+        token: Arc<Mutex<Option<CoinbaseOAuth2Token>>>
+    },
+}
 
 #[derive(Debug, Clone)]
 struct HttpClientAgent {
@@ -87,31 +118,65 @@ impl HttpClientAgent {
 
 #[derive(Debug, Clone)]
 pub struct SecureHttpClientAgent {
-    /// JWT generator, disabled in sandbox mode.
-    jwt: Option<Jwt>,
+    /// Authenticator
+    authenticator: Authenticator,
+    /// OAuth2 callback
+    oauth2_callback: Option<Arc<dyn CoinbaseAppOAuth2Callback>>,
     /// Base client that is responsible for making the requests.
     base: HttpClientAgent,
 }
 
 impl SecureHttpClientAgent {
-    pub(super) fn new(auth: CoinbaseAuth, sandbox: bool, timeout: Duration) -> Result<Self, Error> {
-        let jwt: Option<Jwt> = match auth {
-            CoinbaseAuth::None => None,
+    pub(super) fn new(
+        auth: CoinbaseAuth,
+        sandbox: bool,
+        timeout: Duration,
+        oauth2_callback: Option<Arc<dyn CoinbaseAppOAuth2Callback>>,
+    ) -> Result<Self, Error> {
+        let authenticator: Authenticator = match auth {
+            CoinbaseAuth::None => Authenticator::None,
             CoinbaseAuth::ApiKeys {
                 api_key,
                 secret_key,
             } => {
                 // Do not generate JWT in sandbox mode.
                 if sandbox {
-                    None
+                    Authenticator::None
                 } else {
-                    Some(Jwt::new(api_key, secret_key)?)
+                    Authenticator::Jwt(Jwt::new(api_key, secret_key)?)
                 }
+            }
+            CoinbaseAuth::OAuth {
+                client_id,
+                client_secret,
+                redirect_url,
+                token,
+            } => {
+                let auth_url: Url = Url::parse(OAUTH_AUTHORIZE_URL)?;
+                let auth_url: AuthUrl = AuthUrl::from_url(auth_url);
+
+                let token_url: Url = Url::parse(OAUTH_ACCESS_TOKEN_URL)?;
+                let token_url: TokenUrl = TokenUrl::from_url(token_url);
+
+                let redirect_url: RedirectUrl = RedirectUrl::from_url(redirect_url);
+
+                let client = BasicClient::new(client_id)
+                    .set_client_secret(client_secret)
+                    .set_auth_uri(auth_url)
+                    .set_token_uri(token_url)
+                    .set_redirect_uri(redirect_url);
+
+                //client.exchange_refresh_token()
+
+                //client.exchange_code().request_async()
+
+                Authenticator::OAuth2 { client, token: Arc::new(Mutex::new(token)) }
             }
         };
 
         Ok(Self {
-            jwt,
+            authenticator,
+            oauth2_callback,
             base: HttpClientAgent::new(sandbox, timeout)?,
         })
     }
