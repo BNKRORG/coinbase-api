@@ -234,7 +234,7 @@ pub struct Transaction {
     /// User defined description
     pub description: Option<String>,
     /// Created at
-    pub created_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
 }
 
 fn deserialize_string_to_f64<'de, D>(deserializer: D) -> Result<f64, D::Error>
